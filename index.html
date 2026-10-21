@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loan Calculator</title>
+<style>
+  :root { --bg:#f3f5f9; --card:#fff; --text:#1c2333; --muted:#667085; --accent:#2f6fed; --border:#d9dee8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#12151c; --card:#1b2030; --text:#e8ebf2; --muted:#9aa3b5; --accent:#6c9bff; --border:#2d3447; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:16px; background:var(--bg); color:var(--text); font-family:system-ui,sans-serif; }
+  main { max-width:560px; margin:24px auto; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:24px; }
+  h1 { margin:0 0 16px; font-size:1.5rem; }
+  label { display:block; margin:12px 0 4px; font-size:.9rem; color:var(--muted); }
+  input { width:100%; padding:10px; font-size:1rem; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); }
+  button { margin-top:16px; width:100%; padding:12px; font-size:1rem; border:0; border-radius:8px; background:var(--accent); color:#fff; cursor:pointer; }
+  #error { color:#d92d20; margin-top:12px; min-height:1.2em; }
+  #result { margin-top:16px; display:none; }
+  .row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); }
+  .row.big { font-size:1.25rem; font-weight:600; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Loan Calculator</h1>
+  <form id="form" novalidate>
+    <label for="amount">Loan amount</label>
+    <input id="amount" type="number" min="0" step="any" value="10000" required>
+    <label for="rate">Annual interest rate (%)</label>
+    <input id="rate" type="number" min="0" step="any" value="5" required>
+    <label for="years">Term (years)</label>
+    <input id="years" type="number" min="0" step="any" value="3" required>
+    <button type="submit">Calculate</button>
+  </form>
+  <div id="error" role="alert"></div>
+  <div id="result">
+    <div class="row big"><span>Monthly payment</span><span id="monthly"></span></div>
+    <div class="row"><span>Total payment</span><span id="total"></span></div>
+    <div class="row"><span>Total interest</span><span id="interest"></span></div>
+  </div>
+</main>
+<script>
+  const fmt = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" });
+  const $ = id => document.getElementById(id);
+
+  $("form").addEventListener("submit", e => {
+    e.preventDefault();
+    const amount = parseFloat($("amount").value);
+    const rate = parseFloat($("rate").value);
+    const years = parseFloat($("years").value);
+
+    if (!(amount > 0) || !(rate >= 0) || !(years > 0)) {
+      $("error").textContent = "Enter a positive amount and term, and a rate of 0 or more.";
+      $("result").style.display = "none";
+      return;
+    }
+    $("error").textContent = "";
+
+    const n = Math.round(years * 12);
+    const r = rate / 100 / 12;
+    const monthly = r === 0 ? amount / n : amount * r / (1 - Math.pow(1 + r, -n));
+    const total = monthly * n;
+
+    $("monthly").textContent = fmt.format(monthly);
+    $("total").textContent = fmt.format(total);
+    $("interest").textContent = fmt.format(total - amount);
+    $("result").style.display = "block";
+  });
+</script>
+</body>
+</html>
