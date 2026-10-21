@@ -20,12 +20,31 @@
   #result { margin-top:16px; display:none; }
   .row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); }
   .row.big { font-size:1.25rem; font-weight:600; }
+  select { width:100%; padding:10px; font-size:1rem; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); }
+  .sched { max-height:360px; overflow:auto; margin-top:16px; border:1px solid var(--border); border-radius:8px; }
+  table { width:100%; border-collapse:collapse; font-size:.85rem; font-variant-numeric:tabular-nums; }
+  th, td { padding:6px 8px; text-align:right; border-bottom:1px solid var(--border); }
+  th { position:sticky; top:0; background:var(--card); }
+  h2 { font-size:1.1rem; margin:20px 0 0; }
 </style>
 </head>
 <body>
 <main>
   <h1>Loan Calculator</h1>
   <form id="form" novalidate>
+    <label for="currency">Currency</label>
+    <select id="currency">
+      <option value="USD">USD - US Dollar</option>
+      <option value="EUR">EUR - Euro</option>
+      <option value="GBP">GBP - British Pound</option>
+      <option value="CZK">CZK - Czech Koruna</option>
+      <option value="PLN">PLN - Polish Zloty</option>
+      <option value="CHF">CHF - Swiss Franc</option>
+      <option value="JPY">JPY - Japanese Yen</option>
+      <option value="CAD">CAD - Canadian Dollar</option>
+      <option value="AUD">AUD - Australian Dollar</option>
+      <option value="INR">INR - Indian Rupee</option>
+    </select>
     <label for="amount">Loan amount</label>
     <input id="amount" type="number" min="0" step="any" value="10000" required>
     <label for="rate">Annual interest rate (%)</label>
@@ -39,20 +58,27 @@
     <div class="row big"><span>Monthly payment</span><span id="monthly"></span></div>
     <div class="row"><span>Total payment</span><span id="total"></span></div>
     <div class="row"><span>Total interest</span><span id="interest"></span></div>
+    <h2>Repayment schedule</h2>
+    <div class="sched">
+      <table>
+        <thead><tr><th>#</th><th>Payment</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead>
+        <tbody id="schedule"></tbody>
+      </table>
+    </div>
   </div>
 </main>
 <script>
-  const fmt = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" });
   const $ = id => document.getElementById(id);
 
   $("form").addEventListener("submit", e => {
     e.preventDefault();
+    const fmt = new Intl.NumberFormat(undefined, { style: "currency", currency: $("currency").value });
     const amount = parseFloat($("amount").value);
     const rate = parseFloat($("rate").value);
     const years = parseFloat($("years").value);
 
-    if (!(amount > 0) || !(rate >= 0) || !(years > 0)) {
-      $("error").textContent = "Enter a positive amount and term, and a rate of 0 or more.";
+    if (!(amount > 0) || !(rate >= 0) || !(years * 12 >= 0.5)) {
+      $("error").textContent = "Enter a positive amount, a term of at least one month, and a rate of 0 or more.";
       $("result").style.display = "none";
       return;
     }
@@ -66,6 +92,16 @@
     $("monthly").textContent = fmt.format(monthly);
     $("total").textContent = fmt.format(total);
     $("interest").textContent = fmt.format(total - amount);
+    let balance = amount;
+    let rows = "";
+    for (let i = 1; i <= n; i++) {
+      const interest = balance * r;
+      const principal = i === n ? balance : monthly - interest;
+      balance = i === n ? 0 : balance - principal;
+      rows += `<tr><td>${i}</td><td>${fmt.format(principal + interest)}</td><td>${fmt.format(principal)}</td><td>${fmt.format(interest)}</td><td>${fmt.format(balance)}</td></tr>`;
+    }
+    $("schedule").innerHTML = rows;
+
     $("result").style.display = "block";
   });
 </script>
